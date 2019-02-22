@@ -1,6 +1,7 @@
 import pygame,sys
 from pygame.locals import*
 import random
+import time
 
 pygame.init()
 pygame.display.set_caption("My first PyGame program")
@@ -18,9 +19,9 @@ rainDrops = []
 
 clouds = []
 
-keyPressed = False
+umbrella = False
 
-
+t = - 1 #time variable
 
 
 
@@ -41,10 +42,7 @@ class rainDrop:
     def fall(self):
         self.speed = random.randint(5, 10)
         self.ypos += self.speed
-        if self.ypos > 450:
-            rainDrops.remove(i)
-        if self.xpos == humanPos:
-            screen.blit(umb_image, (humanPos - 20, 250))
+
 # class cloud:
 #
 #     def __init__(self):
@@ -59,6 +57,10 @@ class rainDrop:
 #         self.xpos += self.speed
 #         if self.xpos > 650:
 #             clouds.remove(f)
+#
+#     def rain(self):
+#         rainDrops.append(rainDrop())
+
 
 # def spawn():
 #
@@ -68,6 +70,31 @@ class rainDrop:
 #         f.spawn()
 #         f.move()
 
+class human:
+
+    def __init__(self):
+        self.xpos = 320
+        self.ypos = 320
+
+    def draw(self):
+        screen.blit(human_image, (self.xpos, self.ypos))
+
+    def hit_by_raindrop(self, raindrop):
+        return pygame.Rect(self.xpos, self.ypos, 80, 168).collidepoint((raindrop.xpos, raindrop.ypos))
+
+    def move(self):
+        pressed_key = pygame.key.get_pressed()
+        if pressed_key[K_RIGHT]:
+            self.xpos += 5
+        if pressed_key[K_LEFT]:
+            self.xpos -= 5
+        if self.xpos > 640:
+            self.xpos = -40
+        if self.xpos < -40:
+            self.xpos = 640
+
+player = human()
+
 while 1:
 
     clock.tick(60) #sets the FPS by calling clock tick once per frame
@@ -76,29 +103,46 @@ while 1:
 
     screen.fill((169,169,169)) #fill screen with colour
 
-    screen.blit(human_image, (humanPos, 320))
 
-
-
+    player.draw()
+    player.move()
 
     cloudX += 3
     if cloudX > 600:
         cloudX = -460
 
-    if pressed_key[K_RIGHT]:
-        humanPos += 5
-    if pressed_key[K_LEFT]:
-        humanPos -= 5
-    if humanPos > 640:
-        humanPos = -40
-    if humanPos < -40:
-        humanPos = 640
+    if umbrella == True:
+        screen.blit(umb_image, (player.xpos - 20, 250))
+
+
+    if time.time() - t < 0.3: # detect if time since the last raindrop hit is > 0.3 seconds
+        umbrella = True
+    else:
+        umbrella = False
+
 
     rainDrops.append(rainDrop())
 
-    for i in rainDrops:
-        i.draw()
-        i.fall()
+    i = 0
+    while i < len(rainDrops):
+        rainDrops[i].fall()
+        rainDrops[i].draw()
+
+        if player.hit_by_raindrop(rainDrops[i]):
+            t = time.time()
+
+        if rainDrops[i].ypos > 600 or player.hit_by_raindrop(rainDrops[i]):
+            del rainDrops[i]
+            i -= 1
+
+        i += 1
+
+
+
+
+    # for i in rainDrops: #use while loop instead of for loop for deleting list
+    #     i.draw()
+    #     i.fall()
 
     screen.blit(cloud_image, (cloudX, 0))
 
